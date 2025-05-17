@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar/Deletar Produtos</title>
+  <link rel="stylesheet" href="./assets/styles/lista.css">
+  <meta name="theme-color" content="#dda919">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <div class="container">
+    <h1>Lista de Produtos</h1>
+    <p>Versão 2.7</p>
+
+    <!-- Busca por código -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Digite o Código de Barras para buscar...">
+      <button onclick="filtrarProdutos()">Buscar</button>
+    </div>
+
+    <table id="product-list">
+      <thead>
+        <tr>
+          <th>Código de Barras</th>
+          <th>Quantidade</th>
+          <th>Data da Leitura</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Linhas preenchidas via JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebaseConfig.js"></script>
+
+  <script>
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    // Só lista após autenticação
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        alert('Faça login para ver seus produtos.');
+        window.location.href = 'login.html';
+      } else {
+        listarProdutos(user.email);
+      }
+    });
+
+    // Carrega lista (com filtro opcional)
+    function listarProdutos(userEmail, filtro = '') {
+      const tbody = document.querySelector('#product-list tbody');
+      tbody.innerHTML = '';
+
+      db.collection('produtos')
+        .where('IDcliente', '==', userEmail)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4">(nenhum produto)</td></tr>';
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const p = doc.data();
+            // Aplica filtro de busca
+            if (filtro && !p.codigoInterno.includes(filtro)) return;
+
+            // Formata a data da leitura
+            const dt = p.timestamp
+              ? new Date(p.timestamp.toDate()).toLocaleString('pt-BR')
+              : '—';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${p.codigoInterno}</td>
+              <td>${p.quantidade}</td>
+              <td>${dt}</td>
+              <td class="action-buttons">
+                <button onclick="editarProduto('${doc.id}')">Editar</button>
+                <button onclick="deletarProduto('${doc.id}')">Deletar</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error('Erro ao listar produtos:', err);
+        });
+    }
+
+    // Filtrar pela caixa de busca
+    function filtrarProdutos() {
+      const filtro = document.getElementById('searchInput').value.trim();
+      const user   = auth.currentUser;
+      if (user) listarProdutos(user.email, filtro);
+    }
+
+    // Excluir um produto
+    function deletarProduto(id) {
+      db.collection('produtos').doc(id).delete()
+        .then(() => {
+          alert('Produto deletado com sucesso!');
+          const user = auth.currentUser;
+          if (user) listarProdutos(user.email);
+        })
+        .catch(err => {
+          console.error('Erro ao deletar:', err);
+        });
+    }
+
+    // Redirecionar para edição
+    function editarProduto(id) {
+      window.location.href = `cadastro.html?id=${id}`;
+    }
+  </script>
+</body>
+</html>
