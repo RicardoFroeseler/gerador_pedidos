@@ -45,7 +45,7 @@
             <!-- Novo botão: -->
             <button id="btn-clear-orders" class="menu-item">
                 <i class="fa-solid fa-trash"></i>
-                <span>Limpar Pedidos Anteriores</span>
+                <span>Limpar Pedidos Anterior</span>
             </button>
         </div>
     </div>
@@ -82,14 +82,8 @@
                 snapshot.forEach(doc => {
                     const p = doc.data();
                     dados.push({
-                        Nome: p.nome,
                         Codigo_Barras: p.codigoInterno,
-                        Preco_Custo: p.precoCusto,
-                        Preco_Venda: p.precoVenda,
-                        Grupo: p.grupo,
                         Quantidade: p.quantidade,
-                        Unidade: p.unidade,
-                        Fracionado: p.fracionado ? 'Sim' : 'Não'
                     });
                 });
 

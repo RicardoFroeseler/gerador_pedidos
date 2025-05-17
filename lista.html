@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Editar/Deletar Produtos</title>
-  <link rel="stylesheet" href="./assets/styles/lista.css">
-  <meta name="theme-color" content="#dda919">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Ajuste o caminho do CSS conforme sua estrutura de pastas -->
+  <link rel="stylesheet" href="assets/styles/lista.css"/>
+  <meta name="theme-color" content="#dda919"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
 </head>
 <body>
   <div class="container">
@@ -16,7 +16,7 @@
 
     <!-- Busca por código -->
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Digite o Código de Barras para buscar...">
+      <input type="text" id="searchInput" placeholder="Digite o Código de Barras para buscar..."/>
       <button onclick="filtrarProdutos()">Buscar</button>
     </div>
 
@@ -30,22 +30,21 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Linhas preenchidas via JS -->
+        <!-- Linhas geradas via JS -->
       </tbody>
     </table>
   </div>
 
-  <!-- Firebase SDK v8 -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="firebaseConfig.js"></script>
 
   <script>
-    const auth = firebase.auth();
-    const db   = firebase.firestore();
+    // auth e firestore já inicializados em firebaseConfig.js
 
-    // Só lista após autenticação
+    // Listagem após autenticação
     auth.onAuthStateChanged(user => {
       if (!user) {
         alert('Faça login para ver seus produtos.');
@@ -55,14 +54,17 @@
       }
     });
 
-    // Carrega lista (com filtro opcional)
+    /**
+     * Lista produtos e ordena localmente pelo timestamp.
+     * @param {string} userEmail - E-mail do usuário autenticado
+     * @param {string} [filtro] - String opcional para filtrar pelo código
+     */
     function listarProdutos(userEmail, filtro = '') {
       const tbody = document.querySelector('#product-list tbody');
       tbody.innerHTML = '';
 
-      db.collection('produtos')
+      firestore.collection('produtos')
         .where('IDcliente', '==', userEmail)
-        .orderBy('timestamp', 'desc')
         .get()
         .then(snapshot => {
           if (snapshot.empty) {
@@ -70,24 +72,31 @@
             return;
           }
 
-          snapshot.forEach(doc => {
-            const p = doc.data();
-            // Aplica filtro de busca
+          // Converte docs em array e ordena localmente
+          const docs = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => {
+              const ta = a.timestamp ? a.timestamp.toDate() : 0;
+              const tb = b.timestamp ? b.timestamp.toDate() : 0;
+              return tb - ta; // decrescente
+            });
+
+          docs.forEach(p => {
+            // Aplica filtro no código
             if (filtro && !p.codigoInterno.includes(filtro)) return;
 
-            // Formata a data da leitura
-            const dt = p.timestamp
+            const dataLeitura = p.timestamp
               ? new Date(p.timestamp.toDate()).toLocaleString('pt-BR')
               : '—';
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td>${p.codigoInterno}</td>
-              <td>${p.quantidade}</td>
-              <td>${dt}</td>
+              <td>${p.quantidade ?? '—'}</td>
+              <td>${dataLeitura}</td>
               <td class="action-buttons">
-                <button onclick="editarProduto('${doc.id}')">Editar</button>
-                <button onclick="deletarProduto('${doc.id}')">Deletar</button>
+                <button onclick="editarProduto('${p.id}')">Editar</button>
+                <button onclick="deletarProduto('${p.id}')">Deletar</button>
               </td>
             `;
             tbody.appendChild(tr);
@@ -95,27 +104,28 @@
         })
         .catch(err => {
           console.error('Erro ao listar produtos:', err);
+          const tbody = document.querySelector('#product-list tbody');
+          tbody.innerHTML = '<tr><td colspan="4">Erro ao carregar.</td></tr>';
         });
     }
 
     // Filtrar pela caixa de busca
     function filtrarProdutos() {
       const filtro = document.getElementById('searchInput').value.trim();
-      const user   = auth.currentUser;
+      const user = auth.currentUser;
       if (user) listarProdutos(user.email, filtro);
     }
 
     // Excluir um produto
     function deletarProduto(id) {
-      db.collection('produtos').doc(id).delete()
+      if (!confirm('Deseja realmente excluir este produto?')) return;
+      firestore.collection('produtos').doc(id).delete()
         .then(() => {
-          alert('Produto deletado com sucesso!');
+          alert('Produto excluído!');
           const user = auth.currentUser;
           if (user) listarProdutos(user.email);
         })
-        .catch(err => {
-          console.error('Erro ao deletar:', err);
-        });
+        .catch(err => console.error('Erro ao deletar produto:', err));
     }
 
     // Redirecionar para edição
