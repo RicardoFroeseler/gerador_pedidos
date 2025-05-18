@@ -6,11 +6,7 @@
     <title>Cadastro de Mercadorias</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="./assets/styles/cadastro.css">
-
-    <!-- Cor da barra de navegação no Android (Chrome) -->
     <meta name="theme-color" content="#ff7300">
-
-    <!-- Cor da barra de status no iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
@@ -19,165 +15,181 @@
     <div class="container">
         <h3>Cadastro de Mercadorias</h3>
 
+        <!-- Botão para voltar ao menu -->
+        <button onclick="window.location.href='menu.html'" style="margin-bottom: 20px;" class="btn">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Menu
+        </button>
+
         <!-- Formulário de Cadastro -->
         <form id="cadastroMercadoriaForm">
-            <!-- Campo oculto para armazenar o produtoId quando estiver em modo de edição -->
             <input type="hidden" id="produtoId" name="produtoId">
-
-            <!-- Campo para Código Interno (Código de Barras ou QR Code) -->
             <div class="form-group">
                 <label for="codigoInterno">Código Barras:</label>
-                <!-- Removido readonly para permitir entrada manual -->
-                <input type="text" id="codigoInterno" name="codigoInterno" placeholder="Código EAN" required>
+                <input type="text" id="codigoInterno" name="codigoInterno" placeholder="Codigo EAN" required>
                 <button type="button" id="iniciarCameraBtn" class="btn">
                     <i class="fa-solid fa-camera"></i> Escanear
                 </button>
-                <button type="button" id="verificarDuplicidadeBtn" class="btn">
-                    <i class="fa-solid fa-exclamation-triangle"></i> Verificar se o código já está listado
-                </button>
-                <button type="button" id="pararCameraBtn" class="btn" style="display: none;">
-                    <i class="fa-solid fa-stop"></i> Parar Câmera
-                </button>
+                <button type="button" id="verificarDuplicidadeBtn" class="btn">Verificar se o codigo ja esta listado</button>
+                <button type="button" id="pararCameraBtn" class="btn" style="display: none;">Parar Câmera</button>
             </div>
-
-            <!-- Área de Leitura de Câmera -->
             <div id="leitor-codigo" class="camera-view"></div>
-
-            <!-- Campo para Quantidade -->
             <div class="form-group">
-                <label for="quantidade">Quantidade:</label>
-                <input type="number" id="quantidade" name="quantidade" placeholder="Quantidade" min="1" required>
+                <label for="quantidade">Quantidade (opcional):</label>
+                <input type="number" id="quantidade" name="quantidade" placeholder="Quantidade">
             </div>
-
-            <!-- Checkbox para adicionar zero à esquerda -->
             <div class="form-group">
-                <label for="adicionarZeroCheckbox">Código começa com 0:</label>
+                <label for="adicionarZeroCheckbox">Codigo comeca com 0 :</label>
                 <input type="checkbox" id="adicionarZeroCheckbox" name="adicionarZeroCheckbox">
             </div>
-
             <!-- Botão para Enviar o Formulário -->
-            <button type="submit" id="saveBtn" class="btn">Cadastrar Mercadoria</button>
+            <button type="submit" class="btn" id="btnCadastrar">Cadastrar Mercadoria</button>
             <br>
             <p>Versão 2.7</p>
         </form>
     </div>
 
-    <!-- Firebase e Firestore -->
+    <!-- Configuracao -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <!-- Carregar a configuração do Firebase -->
     <script src="firebaseConfig.js"></script>
-
-    <!-- Importa a biblioteca Html5-qrcode da CDN -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
-    <!-- Importa o script de câmera -->
     <script src="camera.js"></script>
 
-    <!-- Script para salvar dados no Firestore -->
     <script>
-        const auth = firebase.auth();
-        const db   = firebase.firestore();
-        const form = document.getElementById('cadastroMercadoriaForm');
-        const saveBtn = document.getElementById('saveBtn');
-        let isSaving = false;
-        const urlParams = new URLSearchParams(window.location.search);
-        const existingId = urlParams.get('id');
-
-        // Verifica autenticação e carrega em modo de edição se houver ID
-        auth.onAuthStateChanged(user => {
-            if (!user) {
-                alert('Faça login para cadastrar mercadorias.');
-                window.location.href = 'login.html';
-            } else if (existingId) {
-                carregarProdutoParaEdicao(existingId);
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log('Usuário autenticado:', user.email);
+                const params = new URLSearchParams(window.location.search);
+                const produtoId = params.get('id');
+                if (produtoId) {
+                    carregarProdutoParaEdicao(produtoId);
+                }
+            } else {
+                console.log('Nenhum usuário autenticado. Por favor, faça login.');
             }
         });
 
-        // Carrega produto para edição
         function carregarProdutoParaEdicao(produtoId) {
-            db.collection('produtos').doc(produtoId).get()
-                .then(doc => {
-                    if (!doc.exists) return;
+            firestore.collection('produtos').doc(produtoId).get()
+            .then((doc) => {
+                if (doc.exists) {
                     const produto = doc.data();
                     document.getElementById('produtoId').value = doc.id;
                     document.getElementById('codigoInterno').value = produto.codigoInterno;
-                    document.getElementById('quantidade').value    = produto.quantidade;
-                })
-                .catch(error => console.error('Erro ao carregar para edição:', error));
+                    document.getElementById('quantidade').value = produto.quantidade;
+                }
+            })
+            .catch((error) => {
+                console.error('Erro ao carregar o produto para edição:', error);
+            });
         }
 
-        // Envio do formulário (novo/edição) com debounce de cliques
-        form.addEventListener('submit', async e => {
+        document.getElementById('cadastroMercadoriaForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (isSaving) return; // bloqueia cliques repetidos
-            isSaving = true;
-            saveBtn.disabled = true;
+            const btn = document.getElementById('btnCadastrar');
+            btn.disabled = true; // Desabilita o botão assim que clica
 
-            const user = auth.currentUser;
-            if (!user) return;
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                alert('Você precisa estar logado para cadastrar ou editar produtos.');
+                btn.disabled = false;
+                return;
+            }
 
+            const userEmail = user.email;
             let codigoInterno = document.getElementById('codigoInterno').value.trim();
             const adicionarZero = document.getElementById('adicionarZeroCheckbox').checked;
             if (adicionarZero && !codigoInterno.startsWith('0')) {
                 codigoInterno = '0' + codigoInterno;
             }
-            const quantidade = parseInt(document.getElementById('quantidade').value, 10);
+
             const produtoId = document.getElementById('produtoId').value;
+            const quantidade = parseFloat(document.getElementById('quantidade').value) || null;
 
             if (!codigoInterno || !quantidade) {
-                alert('Preencha código e quantidade.');
-                isSaving = false;
-                saveBtn.disabled = false;
+                alert('Por favor, preencha todos os campos obrigatórios: Código de Barras e Quantidade.');
+                btn.disabled = false;
                 return;
             }
 
             const produtoData = {
-                codigoInterno,
-                quantidade,
-                IDcliente: user.email,
+                codigoInterno: codigoInterno,
+                quantidade: quantidade,
+                IDcliente: userEmail,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            try {
-                if (produtoId) {
-                    await db.collection('produtos').doc(produtoId).set(produtoData);
+            const finalizar = () => { btn.disabled = false; };
+
+            if (produtoId) {
+                firestore.collection('produtos').doc(produtoId).set(produtoData)
+                .then(() => {
                     alert('Produto atualizado com sucesso!');
-                } else {
-                    await db.collection('produtos').add(produtoData);
-                    alert('Produto cadastrado com sucesso!');
-                }
-                form.reset();
-                document.getElementById('produtoId').value = '';
-            } catch (error) {
-                console.error('Erro ao salvar:', error);
-                alert('Erro ao salvar produto.');
-            } finally {
-                isSaving = false;
-                saveBtn.disabled = false;
+                    document.getElementById('cadastroMercadoriaForm').reset();
+                    document.getElementById('produtoId').value = '';
+                    finalizar();
+                }).catch((error) => {
+                    console.error('Erro ao atualizar o produto:', error);
+                    finalizar();
+                });
+            } else {
+                firestore.collection('produtos')
+                    .where('codigoInterno', '==', codigoInterno)
+                    .where('IDcliente', '==', userEmail)
+                    .get()
+                    .then((querySnapshot) => {
+                        if (!querySnapshot.empty) {
+                            alert('Você já cadastrou um produto com o código de barras ' + codigoInterno + '!');
+                            finalizar();
+                        } else {
+                            firestore.collection('produtos').add(produtoData)
+                            .then(() => {
+                                alert('Produto cadastrado com sucesso!');
+                                document.getElementById('cadastroMercadoriaForm').reset();
+                                finalizar();
+                            }).catch((error) => {
+                                console.error('Erro ao cadastrar o produto:', error);
+                                finalizar();
+                            });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Erro ao cadastrar o produto:', error);
+                        finalizar();
+                    });
             }
         });
 
-        // Verificar duplicidade
-        document.getElementById('verificarDuplicidadeBtn').addEventListener('click', async () => {
-            const user = auth.currentUser;
-            const codigo = document.getElementById('codigoInterno').value.trim();
-            if (!user || !codigo) return alert('Faça login e informe um código primeiro.');
-            try {
-                const snapshot = await db.collection('produtos')
-                    .where('IDcliente', '==', user.email)
-                    .where('codigoInterno', '==', codigo)
-                    .get();
-                alert(snapshot.empty
-                    ? 'Nenhuma duplicidade encontrada.'
-                    : 'Este código já foi cadastrado!'
-                );
-            } catch (error) {
-                console.error('Erro ao verificar duplicidade:', error);
-                alert('Erro ao verificar duplicidade.');
+        document.getElementById('verificarDuplicidadeBtn').addEventListener('click', function() {
+            const codigoInterno = document.getElementById('codigoInterno').value.trim();
+            const user = firebase.auth().currentUser;
+
+            if (!codigoInterno) {
+                alert('Por favor, insira ou escaneie um código de barras antes de verificar.');
+                return;
             }
+
+            if (!user) {
+                alert('Você precisa estar logado para verificar a duplicidade.');
+                return;
+            }
+
+            const userEmail = user.email;
+            firestore.collection('produtos')
+                .where('codigoInterno', '==', codigoInterno)
+                .where('IDcliente', '==', userEmail)
+                .get()
+                .then((querySnapshot) => {
+                    if (!querySnapshot.empty) {
+                        alert('Produto com o código de barras ' + codigoInterno + ' já está cadastrado para você!');
+                    } else {
+                        alert('Nenhum produto duplicado encontrado. Você pode cadastrar esse código.');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Erro ao verificar duplicidade:', error);
+                });
         });
     </script>
 </body>
