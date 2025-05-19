@@ -3,122 +3,95 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Estilos globais para centralização */
 html, body {
-    height: 100vh; /* Garante que o html e body ocupem toda a altura da tela */
+    height: 100vh;
+    min-height: 100vh;
     display: flex;
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: center; /* Centraliza verticalmente */
-    background: -webkit-linear-gradient(90deg, #ffa238,#e5842a,#ff7300);
-    background: linear-gradient(90deg, #ffa238,#e5842a,#ff7300);
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(90deg, #ffa238, #e5842a, #ff7300);
 }
 
-body {
-    background: transparent;
-}
-
-/* Ocultar conteúdo mobile por padrão */
-.mobile-content {
-    display: none;
-}
-
-/* Mostrar conteúdo mobile e ocultar desktop quando for uma tela pequena */
-@media (max-width: 768px) {
-    .desktop-content {
-        display: none; /* Esconder conteúdo de desktop em telas pequenas */
-    }
-
-    .mobile-content {
-        display: block; /* Mostrar conteúdo de mobile */
-    }
-}
-
-/* Container principal que centraliza o conteúdo */
+/* Container principal */
 .container {
     display: flex;
-    flex-direction: column; /* Garante que o conteúdo dentro do container seja disposto em coluna */
-    justify-content: center; /* Centraliza o conteúdo internamente */
-    align-items: center; /* Centraliza o conteúdo ao centro */
-    text-align: center; /* Texto centralizado */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     background-color: rgba(255, 255, 255, 0.9);
-    padding: 30px;
+    padding: 30px 30px 40px 30px;
     border-radius: 20px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    max-width: 900px;
-    width: 90%;
-    animation: fadeIn 0.8s ease-in-out; /* Animação de entrada */
+    max-width: 400px;
+    width: 95%;
+    animation: fadeIn 0.8s ease-in-out;
 }
 
-
-/* inicio estilo para tela desktop */
-.h1desktop {
-    color: #dda919;
-    padding-bottom: 22px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+/* Mostre sempre o conteúdo mobile */
+.mobile-content {
+    display: block;
+    width: 100%;
 }
 
-.h3desktop {
-    font-size: 16px;
-    
-    color: #50504f6b;
-    padding-bottom: 36px;
-
-    
-}
-
-/* Estilo do botão de redirecionamento */
-.btn-redirect {
-    padding: 12px 24px;
-    background-color: #ff7043;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
-    
-}
-
-.btn-redirect:hover {
-    background-color: #f4511e;
-    
-}
-
-/* final estilo para tela desktop */
-
-/* inicio estilo para tela smartphone */
 .h1smart {
     color: #dda919;
     padding-bottom: 22px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 2rem;
+    font-weight: bold;
 }
 
+.h3desktop {
+    font-size: 1rem;
+    color: #50504f6b;
+    padding-bottom: 36px;
+}
 
 #login-google {
-    padding: 10px 20px;
+    padding: 12px 24px;
     background-color: #4285F4;
     width: 250px;
     color: white;
     border: none;
     cursor: pointer;
-    margin-top: 52px;
+    margin-top: 40px;
     margin-bottom: 22px;
     border-radius: 20px;
     transition: background-color 0.3s ease, transform 0.3s ease;
-    
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-i {
+#login-google i {
     margin-right: 16px;
+    font-size: 1.4rem;
 }
 
 #login-google:hover {
     background-color: #3367d6;
+    transform: translateY(-2px) scale(1.03);
 }
 
-/* inicio estilo para tela smartphone */
+/* Animação fadeIn */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+
+/* Responsividade para telas grandes */
+@media (min-width: 700px) {
+    .container {
+        max-width: 430px;
+        padding: 40px 50px 60px 50px;
+    }
+    .h1smart { font-size: 2.2rem; }
+    .h3desktop { font-size: 1.1rem; }
+}
